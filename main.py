@@ -1,41 +1,45 @@
-# LÍNEA 1: Importamos la librería 'os' (Operating System) del núcleo de Python.
-# Nos permite interactuar con el sistema de archivos de tu laptop HP Spectre.
 import os
-
-# LÍNEA 5: Importamos la librería 'sys' (System) del núcleo de Python.
-# Nos da acceso a variables y funciones que interactúan directamente con el intérprete.
 import sys
 
-# LÍNEA 9: Una línea crítica de MLOps. Tomamos la ruta absoluta de la carpeta actual donde
-# se está ejecutando este archivo y la agregamos al mapa de búsqueda de Python ('sys.path').
-# Esto garantiza que Python pueda encontrar tus módulos sin importar desde dónde lances el comando.
+# Agregamos la ruta absoluta al mapa de búsqueda de Python
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
-# LÍNEA 14: Importamos la función de carga de datos desde tu módulo independiente 'ingestion'.
+# Importamos nuestros módulos y la librería oficial de MLflow
 from src.ingestion import cargar_datos_casas
-
-# LÍNEA 17: Importamos la función de entrenamiento desde tu módulo independiente 'modeling'.
 from src.modeling import entrenar_modelo_casas
+import mlflow
 
 def ejecutar_pipeline_completo():
-    """Coordina y ejecuta de inicio a fin todas las etapas del pipeline de MLOps."""
     print("🚀 === INICIANDO PIPELINE END-TO-END DE MLOps ===")
     
-    # LÍNEA 24: ETAPA 1 - Ingestión de datos.
-    # Llamamos a tu función modular. Ella va al disco, lee el CSV y nos devuelve la tabla estructurada.
+    # LÍNEA 15: Conectamos el orquestador a la misma base de datos SQLite
+    mlflow.set_tracking_uri("sqlite:///mlflow.db")
+
+    # ETAPA 1: Ingestión de datos
     datos_casas = cargar_datos_casas()
     
-    # LÍNEA 28: ETAPA 2 - Entrenamiento del Modelo de IA.
-    # Tomamos la tabla que nos devolvió la Etapa 1 y se la pasamos en bandeja de plata al entrenador.
-    # El algoritmo calcula la regresión lineal y nos devuelve el objeto del cerebro matemático entrenado.
+    # ETAPA 2: Entrenamiento del Modelo de IA y registro automático
     modelo_final = entrenar_modelo_casas(datos_casas)
     
-    print("🚀 === PIPELINE EJECUTADO CON ÉXITO EN TU SISTEMA ===\n")
+    # ETAPA 3: Consulta automática de la bitácora indexada en SQLite
+    print("\n📊 === CONSULTANDO LA BASE DE DATOS CIENTÍFICA EN VIVO ===")
     
-    # Devolvemos el modelo final listo por si se necesita consumir en producción
-    return modelo_final
+    # Usamos la API de MLflow para buscar todas las corridas registradas en la DB
+    runs = mlflow.search_runs(experiment_names=["Proyecto_Prediccion_Casas"])
+    
+    print("\n-------------------------------------------------------------")
+    print(" NOMBRE DEL RUN              | PARÁMETRO (Intercept) | MÉTRICA (R²)")
+    print("-------------------------------------------------------------")
+    # Recorremos cada fila que nos devolvió la consulta SQL interna de MLflow
+    for _, fila in runs.iterrows():
+        nombre = fila["tags.mlflow.runName"]
+        parametro = fila["params.fit_intercept"]
+        metrica = fila["metrics.r2_score"]
+        print(f" {nombre:<26} | {parametro:<21} | {metrica:.2f}")
+    print("-------------------------------------------------------------")
+    
+    print("🚀 === PIPELINE EJECUTADO CON ÉXITO EN TU SISTEMA ===\n")
 
-# LÍNEA 38: La cláusula estándar de protección de Python. Garantiza que este script
-# solo se ejecute si tú lo lanzas directamente, y no si otra librería intenta importarlo.
+
 if __name__ == "__main__":
     ejecutar_pipeline_completo()

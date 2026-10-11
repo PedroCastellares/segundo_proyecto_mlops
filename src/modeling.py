@@ -1,43 +1,45 @@
-# LÍNEA 1: Importamos la clase LinearRegression de la librería Scikit-Learn.
-# Este algoritmo busca trazar una línea recta matemática óptima que cruce entre
-# los puntos de datos para aprender a predecir una variable en base a otra.
+# LÍNEA 1: Importamos el algoritmo de Regresión Lineal de Scikit-Learn.
 from sklearn.linear_model import LinearRegression
+# LÍNEA 3: Importamos la librería oficial de MLflow para activar el cuaderno de bitácora científico.
+import mlflow
 
 def entrenar_modelo_casas(df):
-    """Toma la tabla de datos, aísla las variables y entrena el modelo de IA.
-
-    Args:
-        df (pd.DataFrame): Tabla estructurada con las columnas de las casas.
-
-    Returns:
-        LinearRegression: El objeto del algoritmo entrenado (el cerebro de la IA).
-    """
-    # LÍNEA 14: Imprimimos un mensaje de control en la consola para monitorear el flujo.
-    print("\n🤖 [Modelado] Iniciando el entrenamiento del algoritmo de IA...")
+    """Toma la tabla de datos, entrena el algoritmo y registra la ciencia en la base de datos SQLite."""
+    print("\n🤖 [Modelado] Iniciando el entrenamiento y registro indexado en SQLite...")
     
-    # LÍNEA 17: Extremos la variable predictora (X) o característica.
-    # Scikit-Learn exige que las características (X) se entreguen en formato de matriz
-    # bidimensional (una tabla), por eso usamos doble corchete '[["habitaciones"]]'.
+    # LÍNEA 9: Le indicamos a MLflow la ruta exacta de nuestra base de datos relacional SQLite.
+    # El prefijo 'sqlite:///' le ordena crear un archivo único sólido llamado 'mlflow.db' en la raíz de tu carpeta.
+    mlflow.set_tracking_uri("sqlite:///mlflow.db")
+    
+    # LÍNEA 13: Seleccionamos el experimento sanado con rutas universales
+    mlflow.set_experiment("Proyecto_Casas_Fijo")
+    
+    # LÍNEA 16: Separamos las variables (X: característica, y: objetivo) como en la Unidad 2.
     X = df[["habitaciones"]]
-    
-    # LÍNEA 22: Extraemos la variable objetivo (y) o la etiqueta que queremos predecir.
-    # Como es una sola columna de respuestas, se entrega como un vector unidimensional (un corchete).
     y = df["precio_real"]
     
-    # LÍNEA 26: Instanciamos el objeto del modelo matemático en una variable vacía.
-    modelo = LinearRegression()
-    
-    # LÍNEA 29: El comando 'fit' es el momento donde ocurre la "magia" del Machine Learning.
-    # El algoritmo analiza las parejas de (X, y) para calcular la pendiente y el intercepto.
-    modelo.fit(X, y)
-    
-    # LÍNEA 33: Usamos '.score()' para calcular el coeficiente de determinación (R²).
-    # Esta métrica matemática devuelve un valor entre 0 y 1 que indica qué tan precisa es la línea.
-    # Un valor de 0.98 significa que el modelo explica el 98% de la realidad de los precios.
-    precision = modelo.score(X, y)
-    
-    # LÍNEA 38: Imprimimos el resultado de la auditoría matemática formateado a dos decimales.
-    print(f"🎯 [Modelado] ¡IA entrenada con éxito! Precisión del modelo (R²): {precision:.2f}")
-    
-    # LÍNEA 41: Devolvemos el objeto del modelo entrenado (el archivo binario con el conocimiento).
+    # LÍNEA 20: El comando 'start_run' abre una nueva línea de registro (un experimento individual).
+    # Usamos la cláusula 'with' para que si el código falla, la bitácora se cierre de forma segura en el disco.
+    with mlflow.start_run(run_name="Modelo_Base_Regresion"):
+        
+        # LÍNEA 24: Instanciamos y entrenamos el algoritmo matemático de Scikit-Learn.
+        modelo = LinearRegression()
+        modelo.fit(X, y)
+        precision = modelo.score(X, y)
+        
+        # LÍNEA 29: REGISTRO DE PARÁMETROS (La configuración inicial de la IA).
+        # Guardamos en la base de datos que este modelo calculó su propio punto de partida (intercepto).
+        mlflow.log_param("fit_intercept", True)
+        
+        # LÍNEA 33: REGISTRO DE MÉTRICAS (El rendimiento final obtenido).
+        # Guardamos la puntuación de precisión R² lograda por la línea matemática.
+        mlflow.log_metric("r2_score", precision)
+        
+        # LÍNEA 37: REGISTRO DE ARTEFACTOS (El archivo binario del cerebro del modelo).
+        # Guarda el objeto de Python empaquetado para que pueda ser consumido en el futuro.
+        mlflow.sklearn.log_model(modelo, artifact_path="modelo_final_casas")
+        
+        print(f"🎯 [Modelado] ¡IA entrenada y guardada en la DB! Precisión (R²): {precision:.2f}")
+        
     return modelo
+
