@@ -1,0 +1,30 @@
+# LÍNEA 1: Definimos la versión de la sintaxis de Docker Compose
+version: "3.8"
+
+# LÍNEA 4: Definimos el equipo de servicios (los contenedores que trabajarán juntos)
+services:
+
+  # 🤖 SERVICIO 1: Tu Pipeline de Inteligencia Artificial (Entrenamiento)
+  pipeline:
+    build: .
+    environment:
+      - MLFLOW_ALLOW_FILE_STORE=true
+    # Conectamos un volumen físico para compartir la base de datos sqlite entre contenedores
+    volumes:
+      - .:/app
+    # Su comando principal al despertar será únicamente correr el pipeline de Python
+    command: python main.py
+
+  # 📊 SERVICIO 2: El Servidor Visual de MLflow
+  mlflow_ui:
+    build: .
+    environment:
+      - MLFLOW_ALLOW_FILE_STORE=true
+    # Abrimos el túnel de comunicación directo al puerto 5000 de tu laptop HP
+    ports:
+      - "5000:5000"
+    # Compartimos la misma carpeta para leer el archivo mlflow.db en tiempo real
+    volumes:
+      - .:/app
+    # Su comando principal será mantener encendida la interfaz gráfica web leyendo la DB relacional
+    command: mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns --host 0.0.0.0 --port 5000
